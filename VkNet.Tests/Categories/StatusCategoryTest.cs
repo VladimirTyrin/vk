@@ -1,40 +1,32 @@
 ﻿using System;
-using FluentNUnit;
-using Moq;
 using NUnit.Framework;
 using VkNet.Categories;
 using VkNet.Exception;
-using VkNet.Model;
 using VkNet.Model.Attachments;
-using VkNet.Utils;
 
 namespace VkNet.Tests.Categories
 {
     [TestFixture]
-    public class StatusCategoryTest
-    {
-        [SetUp]
-        public void SetUp()
-        {
-        }
-
+    public class StatusCategoryTest : BaseTest
+	{
         private StatusCategory GetMockedStatusCategory(string url, string json)
         {
-            var browser = Mock.Of<IBrowser>(m => m.GetJson(url) == json);
-            return new StatusCategory(new VkApi { AccessToken = "token", Browser = browser });
+            Json = json;
+            Url = url;
+            return new StatusCategory(Api);
         }
 
         [Test]
         public void Get_AccessTokenInvalid_ThrowAccessTokenInvalidException()
         {
             var status = new StatusCategory(new VkApi());
-            This.Action(() => status.Get(1)).Throws<AccessTokenInvalidException>();
+			Assert.That(() => status.Get(1), Throws.InstanceOf<AccessTokenInvalidException>());
         }
 
         [Test]
         public void Get_AccessDenied_ThrowAccessDeniedException()
         {
-            const string url = "https://api.vk.com/method/status.get?uid=1&access_token=token";
+            const string url = "https://api.vk.com/method/status.get?user_id=1&v=" + VkApi.VkApiVersion + "&access_token=token";
             const string json =
                 @"{
                     'error': {
@@ -50,7 +42,7 @@ namespace VkNet.Tests.Categories
                           'value': 'status.get'
                         },
                         {
-                          'key': 'uid',
+                          'key': 'user_id',
                           'value': '4793858'
                         },
                         {
@@ -62,21 +54,21 @@ namespace VkNet.Tests.Categories
                   }";
 
             var status = GetMockedStatusCategory(url, json);
-            This.Action(() => status.Get(1)).Throws<AccessDeniedException>()
-                .Message.ShouldEqual("Permission to perform this action is denied");
-        }
+			var ex = Assert.Throws<AccessDeniedException>(() => status.Get(1));
+			Assert.That(ex.Message, Is.EqualTo("Permission to perform this action is denied"));
+		}
 
         [Test]
         public void Set_AccessTokenInvalid_ThrowAccessTokenInvalidException()
         {
-            var status = new StatusCategory(new VkApi());
-            This.Action(() => status.Set("test")).Throws<AccessTokenInvalidException>();
-        }
+			var status = new StatusCategory(new VkApi());
+			Assert.That(() => status.Set("test"), Throws.InstanceOf<AccessTokenInvalidException>());
+		}
 
         [Test]
         public void Set_AccessDenied_ThrowAccessDeniedException()
         {
-            const string url = "https://api.vk.com/method/status.set?text=test&access_token=token";
+            const string url = "https://api.vk.com/method/status.set?text=test&v=" + VkApi.VkApiVersion + "&access_token=token";
             const string json =
                 @"{
                     'error': {
@@ -104,20 +96,21 @@ namespace VkNet.Tests.Categories
                   }";
 
             var status = GetMockedStatusCategory(url, json);
-            This.Action(() => status.Set("test")).Throws<AccessDeniedException>();
-        }
+			Assert.That(() => status.Set("test"), Throws.InstanceOf<AccessDeniedException>());
+		}
 
         [Test]
         public void Set_TextIsNull_ThrowArgumentNullException()
         {
-            var status = new StatusCategory(new VkApi { AccessToken = "token" });
-            This.Action(() => status.Set(null)).Throws<ArgumentNullException>();
-        }
+			var status = GetMockedStatusCategory("","");
+			Assert.That(() => status.Set(null), Throws.InstanceOf<NullReferenceException>());
+		}
 
         [Test]
+        [Ignore("Данный метод устарел. Пожалуйста используйте метод Audio.SetBroadcast")]
         public void Set_UserDisabledTrackNameBroadcast_ThrowAccessDeniedException()
         {
-            const string url = "https://api.vk.com/method/status.set?audio=0_0&access_token=token";
+            const string url = "https://api.vk.com/method/status.set?audio=0_0&v=" + VkApi.VkApiVersion + "&access_token=token";
             const string json =
                 @"{
                     'error': {
@@ -146,29 +139,30 @@ namespace VkNet.Tests.Categories
 
             var status = GetMockedStatusCategory(url, json);
             var audio = new Audio {Id = 0, OwnerId = 0};
-            This.Action(() => status.Set("test test test", audio)).Throws<AccessDeniedException>()
-                .Message.ShouldEqual("User disabled track name broadcast");
-        }
+			var ex = Assert.Throws<AccessDeniedException>(() => status.Set(audio));
+			Assert.That(ex.Message, Is.EqualTo("User disabled track name broadcast"));
+		}
 
         [Test]
         public void Set_SimpleText_ReturnTrue()
         {
-            const string url = "https://api.vk.com/method/status.set?text=test test test&access_token=token";
+            const string url = "https://api.vk.com/method/status.set?text=test test test&v=" + VkApi.VkApiVersion + "&access_token=token";
             const string json =
                 @"{
                     'response': 1
                   }";
 
             var status = GetMockedStatusCategory(url, json);
-            bool result = status.Set("test test test");
+            var result = status.Set("test test test");
 
-            Assert.That(result, Is.True);
+			Assert.That(result, Is.True);
         }
 
         [Test]
+        [Ignore("Данный метод устарел. Пожалуйста используйте метод Audio.SetBroadcast")]
         public void Set_Audio_ReturnTrue()
         {
-            const string url = "https://api.vk.com/method/status.set?audio=4793858_158073513&access_token=token";
+            const string url = "https://api.vk.com/method/status.set?audio=4793858_158073513&v=" + VkApi.VkApiVersion + "&access_token=token";
             const string json =
                 @"{
                     'response': 1
@@ -177,15 +171,15 @@ namespace VkNet.Tests.Categories
             var status = GetMockedStatusCategory(url, json);
 
             var audio = new Audio { Id = 158073513, OwnerId = 4793858 };
-            bool result = status.Set("test test test", audio);
+            var result = status.Set(audio);
 
-            Assert.That(result, Is.True);
+			Assert.That(result, Is.True);
         }
 
         [Test]
         public void Get_SimpleText_ReturnStatus()
         {
-            const string url = "https://api.vk.com/method/status.get?uid=1&access_token=token";
+            const string url = "https://api.vk.com/method/status.get?user_id=1&v=" + VkApi.VkApiVersion + "&access_token=token";
             const string json =
                 @"{
                     'response': {
@@ -194,17 +188,17 @@ namespace VkNet.Tests.Categories
                   }";
 
             var status = GetMockedStatusCategory(url, json);
-            Status s = status.Get(1);
+            var actual = status.Get(1);
 
-            Assert.That(s, Is.Not.Null);
-            Assert.That(s.Text, Is.EqualTo("it really work!!!"));
-            Assert.That(s.Audio, Is.Null);
+			Assert.That(actual, Is.Not.Null);
+            Assert.That(actual.Text, Is.EqualTo("it really work!!!"));
+            Assert.That(actual.Audio, Is.Null);
         }
 
         [Test]
         public void Get_Audio_ReturnStatus()
         {
-            const string url = "https://api.vk.com/method/status.get?uid=1&access_token=token";
+            const string url = "https://api.vk.com/method/status.get?user_id=1&v=" + VkApi.VkApiVersion + "&access_token=token";
             const string json =
                 @"{
                     'response': {
@@ -223,19 +217,19 @@ namespace VkNet.Tests.Categories
                   }";
 
             var status = GetMockedStatusCategory(url, json);
-            Status s = status.Get(1);
+            var actual = status.Get(1);
 
-            Assert.That(s, Is.Not.Null);
-            Assert.That(s.Text, Is.EqualTo("Тараканы! – Собачье Сердце"));
-            Assert.That(s.Audio, Is.Not.Null);
-            Assert.That(s.Audio.Id, Is.EqualTo(158073513));
-            Assert.That(s.Audio.OwnerId, Is.EqualTo(4793858));
-            Assert.That(s.Audio.Artist, Is.EqualTo("Тараканы!"));
-            Assert.That(s.Audio.Title, Is.EqualTo("Собачье Сердце"));
-            Assert.That(s.Audio.Duration, Is.EqualTo(230));
-            Assert.That(s.Audio.Url.OriginalString, Is.EqualTo("http://cs4838.vkontakte.ru/u4198300/audio/3ada410d4830.mp3"));
-            Assert.That(s.Audio.LyricsId, Is.EqualTo(7985406));
-            Assert.That(s.Audio.AlbumId, Is.Null);
+			Assert.That(actual, Is.Not.Null);
+            Assert.That(actual.Text, Is.EqualTo("Тараканы! – Собачье Сердце"));
+            Assert.That(actual.Audio, Is.Not.Null);
+            Assert.That(actual.Audio.Id, Is.EqualTo(158073513));
+            Assert.That(actual.Audio.OwnerId, Is.EqualTo(4793858));
+            Assert.That(actual.Audio.Artist, Is.EqualTo("Тараканы!"));
+            Assert.That(actual.Audio.Title, Is.EqualTo("Собачье Сердце"));
+            Assert.That(actual.Audio.Duration, Is.EqualTo(230));
+            Assert.That(actual.Audio.Url.OriginalString, Is.EqualTo("http://cs4838.vkontakte.ru/u4198300/audio/3ada410d4830.mp3"));
+            Assert.That(actual.Audio.LyricsId, Is.EqualTo(7985406));
+            Assert.That(actual.Audio.AlbumId, Is.Null);
         }
     }
 }

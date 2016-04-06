@@ -7,7 +7,7 @@
     /// Параметры запроса к ВКонтакте.
     /// </summary>
     [Serializable]
-    public class VkParameters : Dictionary<string, string>
+    public partial class VkParameters : Dictionary<string, string>
     {
         /// <summary>
         /// Инициализирует новый экземпляр класса <see cref="VkParameters"/>.
@@ -82,7 +82,7 @@
         }
 
         /// <summary>
-        /// Добавляет параметр запроса. 
+        /// Добавляет параметр запроса.
         /// Если передан null, то добавление параметра не производится.
         /// </summary>
         /// <typeparam name="T">Тип значения параметра запроса.</typeparam>
@@ -90,46 +90,52 @@
         /// <param name="nullableValue">Значение параметра запроса.</param>
         public void Add<T>(string name, T? nullableValue) where T : struct
         {
-            if (!nullableValue.HasValue)
+            if (nullableValue == null)
+            {
                 return;
+            }
 
             Add(name, nullableValue.Value);
         }
 
         /// <summary>
-        /// Добавляет параметр-дату. 
+        /// Добавляет параметр-дату.
         /// Если передан null, то добавление не производится.
         /// </summary>
         /// <param name="name">Имя параметра запроса.</param>
         /// <param name="nullableDateTime">Значение параметра.</param>
         public void Add(string name, DateTime? nullableDateTime)
         {
-            if (!nullableDateTime.HasValue)
+            if (nullableDateTime == null)
+            {
                 return;
+            }
 
             //var offset = DateTime.Now - nullableDateTime.Value;
-            double totalSeconds = (nullableDateTime.Value.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
-            long offset = Convert.ToInt64(totalSeconds);
+            var totalSeconds = (nullableDateTime.Value.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
+            var offset = Convert.ToInt64(totalSeconds);
 
             Add(name, offset);
         }
 
         /// <summary>
-        /// Добавляет логический параметр. 
+        /// Добавляет логический параметр.
         /// Если передан null или значение параметра false, то добавление не производится.
         /// </summary>
         /// <param name="name">Имя параметра запроса.</param>
         /// <param name="nullableValue">Значение параметра.</param>
         public void Add(string name, bool? nullableValue)
         {
-            if (!nullableValue.HasValue || !nullableValue.Value)
+            if (nullableValue == null || !nullableValue.Value)
+            {
                 return;
+            }
 
             base.Add(name, "1");
         }
 
         /// <summary>
-        /// Добавляет логический параметр. 
+        /// Добавляет логический параметр.
         /// Если передан null, то добавление не производится.
         /// </summary>
         /// <param name="name">Имя параметра запроса.</param>

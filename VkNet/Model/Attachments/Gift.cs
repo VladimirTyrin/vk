@@ -1,10 +1,12 @@
-﻿using VkNet.Utils;
+﻿using System;
+using VkNet.Utils;
 
 namespace VkNet.Model.Attachments
 {
 	/// <summary>
 	/// Подарок.
 	/// </summary>
+	[Serializable]
 	public class Gift : MediaAttachment
 	{
 		/// <summary>
@@ -18,17 +20,17 @@ namespace VkNet.Model.Attachments
 		/// <summary>
 		/// Изображение 48х48.
 		/// </summary>
-		public string Thumb48 { get; set; }
+		public Uri Thumb48 { get; set; }
 
 		/// <summary>
 		/// Изображение 96х96.
 		/// </summary>
-		public string Thumb96 { get; set; }
+		public Uri Thumb96 { get; set; }
 
 		/// <summary>
 		/// Изображение 256х256.
 		/// </summary>
-		public string Thumb256 { get; set; }
+		public Uri Thumb256 { get; set; }
 
 		/// <summary>
 		/// Разобрать из json.

@@ -1,4 +1,6 @@
-﻿using VkNet.Enums.SafetyEnums;
+﻿using System;
+using VkNet.Enums.SafetyEnums;
+using VkNet.Utils;
 
 namespace VkNet.Enums.Filters
 {
@@ -19,30 +21,42 @@ namespace VkNet.Enums.Filters
 		{
 			return CreateFromMask(left.Mask | right.Mask);
 		}
+
+		/// <summary>
+		/// Разобрать из json.
+		/// </summary>
+		/// <param name="response">Ответ сервера.</param>
+		/// <returns>Объект перечисления типа <typeparam name="TFilter">Непосредственно наследник</typeparam></returns>
+		public static TFilter FromJson(VkResponse response)
+		{
+			var value = response.ToString();
+			return FromJson(value);
+		}
+
+		/// <summary>
+		/// Разобрать из json.
+		/// </summary>
+		/// <param name="response">Ответ сервера.</param>
+		/// <returns>Объект перечисления типа <typeparam name="TFilter">Непосредственно наследник</typeparam></returns>
+		public static TFilter FromJson(string response)
+		{
+			var result = new TFilter();
+			var items = response.Split(new []{ ',' }, StringSplitOptions.RemoveEmptyEntries);
+			var isFirst = true;
+			foreach (var item in items)
+			{
+				if (isFirst)
+				{
+					result = CreateFromMask(RegisterPossibleValue(item).Mask);
+					isFirst = false;
+				}
+				else
+				{
+					result = result | CreateFromMask(RegisterPossibleValue(item).Mask);
+				}
+			}
+
+			return result;
+		}
 	}
-
-
-/*	public class SampleFilter : MultivaluedFilter<SampleFilter>
-	{
-		public static readonly SampleFilter Val0 = RegisterPossibleValue(1L << 0, "val0");
-
-		public static readonly SampleFilter Val1 = RegisterPossibleValue(1L << 1, "val1");
-
-		public static readonly SampleFilter Val2 = RegisterPossibleValue(1L << 2, "val2");
-
-		public static readonly SampleFilter All = Val0 | Val1 | Val2;
-	}
-
-
-	public class SampleUnstrictFilter : MultivaluedFilter<SampleUnstrictFilter>
-	{
-		public static SampleUnstrictFilter Val0 = RegisterPossibleValue("val0");
-
-		public static SampleUnstrictFilter Val1 = RegisterPossibleValue("val1");
-
-		public static SampleUnstrictFilter Val2 = RegisterPossibleValue("val2");
-
-		public static SampleUnstrictFilter All = Val0 | Val1 | Val2;
-	}
- */
 }

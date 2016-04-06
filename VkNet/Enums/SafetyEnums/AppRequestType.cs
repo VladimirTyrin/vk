@@ -1,6 +1,4 @@
-﻿using VkNet.Enums.SafetyEnums;
-
-namespace VkNet.Enums
+﻿namespace VkNet.Enums.SafetyEnums
 {
 	/// <summary>
 	/// Тип запроса для приложений
@@ -11,8 +9,9 @@ namespace VkNet.Enums
 		/// В случае если запрос отправляется пользователю, не установившему приложение
 		/// </summary>
 		public static readonly AppRequestType Invite = RegisterPossibleValue("invite");
+
 		/// <summary>
-		/// В случае если пользователь уже установил приложение 
+		/// В случае если пользователь уже установил приложение
 		/// </summary>
 		public static readonly AppRequestType Request = RegisterPossibleValue("request");
 	}

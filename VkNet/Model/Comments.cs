@@ -1,11 +1,13 @@
 ﻿namespace VkNet.Model
 {
-	using VkNet.Utils;
+    using System;
+	using Utils;
 
 	/// <summary>
 	/// Информация о количестве комментариев к записи.
 	/// См. описание <see href="http://vk.com/dev/post"/>. Раздел comments.
 	/// </summary>
+	[Serializable]
 	public class Comments
 	{
 		/// <summary>
@@ -29,14 +31,11 @@
 		/// <returns></returns>
 		internal static Comments FromJson(VkResponse response)
 		{
-			var comments = new Comments
-			{
-				Count = response["count"],
-				CanPost = response["can_post"]
-			};
-
-
-			return comments;
-		}
+			return new Comments
+            {
+                Count = response["count"],
+                CanPost = response["can_post"]
+            };
+        }
 	}
 }

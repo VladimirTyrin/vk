@@ -4,10 +4,11 @@ using VkNet.Utils;
 namespace VkNet.Model.Attachments
 {
 	/// <summary>
-    /// Альбом с фотографиями пользователя.
-    /// См. описание <see href="http://vk.com/dev/attachments_w"/>. Раздел "Альбом с фотографиями".
-    /// </summary>
-    public class Album : MediaAttachment
+	/// Альбом с фотографиями пользователя.
+	/// См. описание <see href="http://vk.com/dev/attachments_w"/>. Раздел "Альбом с фотографиями".
+	/// </summary>
+	[Serializable]
+	public class Album : MediaAttachment
 	{
 		static Album()
 		{
@@ -48,18 +49,17 @@ namespace VkNet.Model.Attachments
 
 		internal static Album FromJson(VkResponse response)
 		{
-			var album = new Album();
-
-			album.Id = response["aid"] ?? response["id"];
-			album.Thumb = response["thumb"];
-			album.OwnerId = response["owner_id"];
-			album.Title = response["title"];
-			album.Description = response["description"];
-			album.CreateTime = response["created"];
-			album.UpdateTime = response["updated"];
-			album.Size = response["size"];
-
-			return album;
+			return new Album
+			{
+				Id = response["album_id"] ?? response["aid"] ?? response["id"],
+				Thumb = response["thumb"],
+				OwnerId = response["owner_id"],
+				Title = response["title"],
+				Description = response["description"],
+				CreateTime = response["created"],
+				UpdateTime = response["updated"],
+				Size = response["size"]
+			};
 		}
 
 		#endregion

@@ -8,53 +8,94 @@
 
     using Exception;
 
-    internal sealed class VkErrors
+    /// <summary>
+    /// Ошибки VK
+    /// </summary>
+    internal static class VkErrors
     {
+        /// <summary>
+        /// Ошибка если строка null или пустая.
+        /// </summary>
+        /// <param name="expr">The expr.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static void ThrowIfNullOrEmpty(Expression<Func<string>>  expr)
         {
             var body = expr.Body as MemberExpression;
             if (body != null)
             {
-                string paramName = body.Member.Name;
-                string value = expr.Compile()();
+                var paramName = body.Member.Name;
+                var value = expr.Compile()();
 
                 if (string.IsNullOrEmpty(value))
+                {
                     throw new ArgumentNullException(paramName);
+                }
             }
         }
 
+        /// <summary>
+        /// Ошибка если число не в диапозоне.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value">Значение.</param>
+        /// <param name="min">Минимальное значение.</param>
+        /// <param name="max">Максимальное значение.</param>
+        /// <exception cref="System.ArgumentOutOfRangeException"></exception>
         public static void ThrowIfNumberNotInRange<T>(T value, T min, T max) where T : struct, IComparable<T>
         {
             if (value.CompareTo(min) < 0 || value.CompareTo(max) > 0)
                 throw new ArgumentOutOfRangeException();
         }
 
+        /// <summary>
+        /// Ошибка если число отрицательное.
+        /// </summary>
+        /// <param name="expr">Выражение.</param>
+        /// <exception cref="System.ArgumentException">Отрицательное значение.</exception>
         public static void ThrowIfNumberIsNegative(Expression<Func<long?>> expr)
         {
             var result = ThrowIfNumberIsNegative<Func<long?>>(expr);
 
-            string name = result.Item1;
-            long? value = result.Item2();
+            var name = result.Item1;
+            var value = result.Item2();
 
-            if (value.HasValue && value < 0) throw new ArgumentException("Отрицательное значение.", name);
+            if (value.HasValue && value < 0)
+            {
+                throw new ArgumentException("Отрицательное значение.", name);
+            }
         }
 
+        /// <summary>
+        /// Ошибка если число отрицательное.
+        /// </summary>
+        /// <param name="expr">Выражение.</param>
+        /// <exception cref="System.ArgumentException">Отрицательное значение.</exception>
         public static void ThrowIfNumberIsNegative(Expression<Func<long>> expr)
         {
             var result = ThrowIfNumberIsNegative<Func<long>>(expr);
 
             var name = result.Item1;
-            long value = result.Item2();
+            var value = result.Item2();
 
-            if (value < 0) throw new ArgumentException("Отрицательное значение.", name);
+            if (value < 0)
+            {
+                throw new ArgumentException("Отрицательное значение.", name);
+            }
         }
 
+        /// <summary>
+        /// Ошибка если число отрицательное.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="expr">Выражение.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">expr</exception>
         private static Tuple<string, T> ThrowIfNumberIsNegative<T>(Expression<T> expr)
         {
             if (expr == null)
                 throw new ArgumentNullException("expr");
 
-            string name = string.Empty;
+            var name = string.Empty;
 
             // Если значение передатеся из вызывающего метода
             var unary = expr.Body as UnaryExpression;
@@ -74,11 +115,18 @@
                 name = body.Member.Name;
             }
 
-            T func = expr.Compile();
+            var func = expr.Compile();
 
             return new Tuple<string, T>(name, func);
         }
 
+        /// <summary>
+        /// Ошибки VK.
+        /// </summary>
+        /// <param name="json">JSON.</param>
+        /// <exception cref="VkApiException">
+        /// Неправильный данные JSON.
+        /// </exception>
         public static void IfErrorThrowException(string json)
         {
             JObject obj;
@@ -100,46 +148,61 @@
 
             switch (code)
             {
-                case 14:
-                    var sid = Convert.ToInt64((string)response["captcha_sid"]);
+                case ErrorCode.CaptchaNeeded:
+                {
+                    var sid = Convert.ToInt64((string) response["captcha_sid"]);
                     var img = Convert.ToString(response["captcha_img"]);
                     throw new CaptchaNeededException(sid, img);
-
-                case 5:
+                }
+                case ErrorCode.NeedValidationOfUser:
+                {
+                    var redirectUri = Convert.ToString(response["redirect_uri"]);
+                    throw new NeedValidationException(message, redirectUri);
+                }
+                case ErrorCode.AuthorizationFailed:
+                {
                     throw new UserAuthorizationFailException(message, code);
+                }
 
-                case 4: // Incorrect signature.
-                case 113: // Invalid user id.
-                case 125: // Invalid group id.
-                case 100: // One of the parameters specified was missing or invalid.
-                case 120: // Invalid message.
+                case ErrorCode.InvalidSignature:
+                case ErrorCode.InvalidUserId:
+                case ErrorCode.InvalidGroupId:
+                case ErrorCode.ParameterMissingOrInvalid:
+                case ErrorCode.InvalidParameter:
+                {
                     throw new InvalidParameterException(message, code);
-
-                case 6: // Too many requests per second.
+                }
+                case ErrorCode.TooManyRequestsPerSecond:
+                {
                     throw new TooManyRequestsException(message, code);
-
-                case 7: // Permission to perform this action is denied by user.
-				case 15: // Access denied: 1) groups list of this user are under privacy.	2) cannot blacklist yourself	
-				case 148: // Access to the menu of the user denied
-                case 170: // Access to user's friends list denied.
-                case 201: // Access denied.
-                case 203: // Access to the group is denied.
-                case 220: // Access to status denied.
-                case 221: // User disabled track name broadcast.
-                case 260: // Access to the groups list is denied due to the user's privacy settings.
-                case 500: // Permission denied. You must enable votes processing in application settings.
+                }
+                case ErrorCode.PermissionToPerformThisAction:
+				case ErrorCode.CannotBlacklistYourself:
+				case ErrorCode.AccessToMenuDenied:
+                case ErrorCode.UserAccessDenied:
+                case ErrorCode.AudioAccessDenied:
+                case ErrorCode.GroupAccessDenied:
+                case ErrorCode.StatusAccessDenied:
+                case ErrorCode.UserDisabledTrackNameBroadcast:
+                case ErrorCode.GroupsListAccessDenied:
+                case ErrorCode.PermissionDenied:
+                {
+                    // Permission denied. You must enable votes processing in application settings.
                     throw new AccessDeniedException(message, code);
-                case 214: // Access to adding post denied: you can only add 50 posts a day.
+                }
+                case ErrorCode.AccessToAddingPostDenied:
+                {
+                    // Access to adding post denied: you can only add 50 posts a day.
                     throw new PostLimitException(message);
-/*
-                case 1: // Unknown error occurred.
-                case 2: // Application is disabled. Enable your application or use test mode.
-                case 10: // Internal server error.
-                case 103: // Out of limits.
-                case 202:
- */ 
+                }
+				case ErrorCode.OutOfLimits:
+                {
+                    throw new OutOfLimitsException(message);
+                }
                 default:
+                {
                     throw new VkApiException(message);
+                }
             }
         }
     }

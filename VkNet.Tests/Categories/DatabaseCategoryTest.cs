@@ -1,29 +1,26 @@
 ﻿using System;
-using FluentNUnit;
-using Moq;
+using System.Collections.Generic;
 using NUnit.Framework;
 using VkNet.Categories;
+using VkNet.Enums;
 using VkNet.Exception;
-using VkNet.Model;
-using VkNet.Utils;
 
 namespace VkNet.Tests.Categories
 {
-    using System.Collections.ObjectModel;
-
-    [TestFixture]
-    public class DatabaseCategoryTest
+	[TestFixture]
+    public class DatabaseCategoryTest : BaseTest
     {
         private DatabaseCategory GetMockedDatabaseCategory(string url, string json)
         {
-            var browser = Mock.Of<IBrowser>(b => b.GetJson(url.Replace('\'', '"')) == json);
-            return new DatabaseCategory(new VkApi{Browser = browser});
+            Json = json;
+            Url = url;
+            return new DatabaseCategory(Api);
         }
 
         [Test]
         public void GetStreetsById_EmptyList()
         {
-            const string url = "https://api.vk.com/method/database.getStreetsById?access_token=";
+            const string url = "https://api.vk.com/method/database.getStreetsById?v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'error': {
@@ -47,14 +44,15 @@ namespace VkNet.Tests.Categories
                   }";
 
             var db = GetMockedDatabaseCategory(url, json);
-            This.Action(() => db.GetStreetsById()).Throws<InvalidParameterException>()
-                .Message.ShouldEqual("One of the parameters specified was missing or invalid: street_ids is undefined");
-        }
+
+			var ex = Assert.Throws<InvalidParameterException>(() => db.GetStreetsById());
+			Assert.That(ex.Message, Is.EqualTo("One of the parameters specified was missing or invalid: street_ids is undefined"));
+		}
 
         [Test]
         public void GetUniversities_FindVstu()
         {
-            const string url = "https://api.vk.com/method/database.getUniversities?q=ВолгГТУ&country_id=1&city_id=10&access_token=";
+            const string url = "https://api.vk.com/method/database.getUniversities?q=ВолгГТУ&country_id=1&city_id=10&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -69,9 +67,9 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<University> universities = db.GetUniversities(1, 10, "ВолгГТУ");
+            var universities = db.GetUniversities(1, 10, "ВолгГТУ");
 
-            Assert.That(universities.Count, Is.EqualTo(1));
+			Assert.That(universities.Count, Is.EqualTo(1));
             Assert.That(universities[0].Id, Is.EqualTo(431));
             Assert.That(universities[0].Name, Is.EqualTo("ВолгГТУ"));
         }
@@ -79,7 +77,7 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetUniversities_ListOfUniversities()
         {
-            const string url = "https://api.vk.com/method/database.getUniversities?q=ThisUniverDoesNotExist&country_id=1&city_id=1&access_token=";
+            const string url = "https://api.vk.com/method/database.getUniversities?q=ThisUniverDoesNotExist&country_id=1&city_id=1&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -89,15 +87,15 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<University> univers = db.GetUniversities(1, 1, "ThisUniverDoesNotExist");
+            var univers = db.GetUniversities(1, 1, "ThisUniverDoesNotExist");
 
-            Assert.That(univers.Count, Is.EqualTo(0));
+			Assert.That(univers.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void GetStreetsById_1_89_437()
         {
-            const string url = "https://api.vk.com/method/database.getStreetsById?street_ids=1,89,437&access_token=";
+            const string url = "https://api.vk.com/method/database.getStreetsById?street_ids=1,89,437&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -118,9 +116,9 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<Street> streets = db.GetStreetsById(1, 89, 437);
+            var streets = db.GetStreetsById(1, 89, 437);
 
-            Assert.That(streets.Count, Is.EqualTo(3));
+			Assert.That(streets.Count, Is.EqualTo(3));
 
             Assert.That(streets[0].Id, Is.EqualTo(1));
             Assert.That(streets[0].Title, Is.EqualTo("8 Марта ул."));
@@ -136,21 +134,20 @@ namespace VkNet.Tests.Categories
         public void GetCities_CountryIdIsNegative_ThrowException()
         {
             var db = GetMockedDatabaseCategory("", "");
-            This.Action(() => db.GetCities(-1)).Throws<ArgumentException>();
-        }
+			Assert.That(() => db.GetCities(-1), Throws.InstanceOf<ArgumentException>());
+		}
 
         [Test]
         public void GetCities_RegionIdIsNegative_ThrowException()
         {
             var db = GetMockedDatabaseCategory("", "");
-            This.Action(() => db.GetCities(1, -2)).Throws<ArgumentException>();
-
-        }
+			Assert.That(() => db.GetCities(1, -2), Throws.InstanceOf<ArgumentException>());
+		}
 
         [Test]
         public void GetCitiesById_EmptyList()
         {
-            const string url = "https://api.vk.com/method/database.getCitiesById?access_token=";
+            const string url = "https://api.vk.com/method/database.getCitiesById?v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': []
@@ -158,15 +155,15 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<City> cities = db.GetCitiesById();
+            var cities = db.GetCitiesById();
 
-            Assert.That(cities.Count, Is.EqualTo(0));
+			Assert.That(cities.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void GetCitiesById_MskSpbVlg()
         {
-            const string url = "https://api.vk.com/method/database.getCitiesById?city_ids=1,2,10&access_token=";
+            const string url = "https://api.vk.com/method/database.getCitiesById?city_ids=1,2,10&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -187,9 +184,9 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<City> cities = db.GetCitiesById(1, 2, 10);
+            var cities = db.GetCitiesById(1, 2, 10);
 
-            Assert.That(cities.Count, Is.EqualTo(3));
+			Assert.That(cities.Count, Is.EqualTo(3));
 
             Assert.That(cities[0].Id, Is.EqualTo(1));
             Assert.That(cities[0].Title, Is.EqualTo("Москва"));
@@ -204,7 +201,7 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetCities_GetBiggestCitiesOfRussia()
         {
-            const string url = "https://api.vk.com/method/database.getCities?country_id=1&count=3&access_token=";
+            const string url = "https://api.vk.com/method/database.getCities?country_id=1&count=3&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -227,9 +224,9 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<City> cities = db.GetCities(1, count: 3);
+            var cities = db.GetCities(1, count: 3);
 
-            Assert.That(cities.Count, Is.EqualTo(3));
+			Assert.That(cities.Count, Is.EqualTo(3));
 
             Assert.That(cities[0].Id, Is.EqualTo(1));
             Assert.That(cities[0].Title, Is.EqualTo("Москва"));
@@ -260,7 +257,7 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetCities_NormalCase()
         {
-            const string url = "https://api.vk.com/method/database.getCities?country_id=1&region_id=1004118&offset=1&count=2&access_token=";
+            const string url = "https://api.vk.com/method/database.getCities?country_id=1&region_id=1004118&offset=1&count=2&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -299,82 +296,66 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetRegions_CountryIdIsNegative_ThrowArgumentException()
         {
-            DatabaseCategory db = GetMockedDatabaseCategory("", "");
-            This.Action(() => db.GetRegions(-1)).Throws<ArgumentException>();
-        }
+            var db = GetMockedDatabaseCategory("", "");
+			Assert.That(() => db.GetRegions(-1), Throws.InstanceOf<ArgumentException>());
+		}
 
         [Test]
         public void GetRegions_CountIsNegative_ThrowArgumentException()
         {
-            DatabaseCategory db = GetMockedDatabaseCategory("", "");
-            This.Action(() => db.GetRegions(1, count: -2)).Throws<ArgumentException>();
-        }
+            var db = GetMockedDatabaseCategory("", "");
+			Assert.That(() => db.GetRegions(1, count: -2), Throws.InstanceOf<ArgumentException>());
+		}
 
         [Test]
         public void GetRegions_OffsetIsNegative_ThrowArgumentException()
         {
-            DatabaseCategory db = GetMockedDatabaseCategory("", "");
-            This.Action(() => db.GetRegions(1, offset: -2)).Throws<ArgumentException>();
-        }
+            var db = GetMockedDatabaseCategory("", "");
+			Assert.That(() => db.GetRegions(1, offset: -2), Throws.InstanceOf<ArgumentException>());
+		}
 
         [Test]
         public void GetRegions_NormalCase_ListOfRegions()
         {
-            const string url = "https://api.vk.com/method/database.getRegions?country_id=1&offset=5&count=3&access_token=";
+            const string url = "https://api.vk.com/method/database.getRegions?country_id=1&offset=5&count=3&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
-                @"{
-                    'response': [
-                      {
-                        'region_id': '1000236',
-                        'title': 'Архангельская область'
-                      },
-                      {
-                        'region_id': '1004118',
-                        'title': 'Астраханская область'
-                      },
-                      {
-                        'region_id': '1004565',
-                        'title': 'Башкортостан'
-                      }
-                    ]
-                  }";
+                @"{'response':{'count':83,'items':[{'id':1004118,'title':'Астраханская область'},{'id':1004565,'title':'Башкортостан'},{'id':1009404,'title':'Белгородская область'}]}}";
 
-            DatabaseCategory db = GetMockedDatabaseCategory(url, json);
+            var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<Region> regions = db.GetRegions(1, count: 3, offset: 5);
+			var regions = db.GetRegions(1, count: 3, offset: 5);
 
             Assert.That(regions.Count, Is.EqualTo(3));
 
-            Assert.That(regions[0].Id, Is.EqualTo(1000236));
-            Assert.That(regions[0].Title, Is.EqualTo("Архангельская область"));
+            Assert.That(regions[0].Id, Is.EqualTo(1004118));
+            Assert.That(regions[0].Title, Is.EqualTo("Астраханская область"));
 
-            Assert.That(regions[1].Id, Is.EqualTo(1004118));
-            Assert.That(regions[1].Title, Is.EqualTo("Астраханская область"));
+            Assert.That(regions[1].Id, Is.EqualTo(1004565));
+            Assert.That(regions[1].Title, Is.EqualTo("Башкортостан"));
 
-            Assert.That(regions[2].Id, Is.EqualTo(1004565));
-            Assert.That(regions[2].Title, Is.EqualTo("Башкортостан"));
+            Assert.That(regions[2].Id, Is.EqualTo(1009404));
+            Assert.That(regions[2].Title, Is.EqualTo("Белгородская область"));
         }
 
         [Test]
         public void GetCountries_CountIsNegative_ThrowArgumentException()
         {
             var db = GetMockedDatabaseCategory("", "");
-            This.Action(() => db.GetCountries(count: -2)).Throws<ArgumentException>();
-        }
+			Assert.That(() => db.GetCountries(count: -2), Throws.InstanceOf<ArgumentException>());
+		}
 
         [Test]
         public void GetCountries_OffsetIsNegative_ThrowArgumentException()
         {
             var db = GetMockedDatabaseCategory("", "");
-            This.Action(() => db.GetCountries(offset: -2)).Throws<ArgumentException>();
-        }
+			Assert.That(() => db.GetCountries(offset: -2), Throws.InstanceOf<ArgumentException>());
+		}
 
         [Test]
         public void GetCountries_ListOfCodes_ListOfCountries()
         {
-            const string url = "https://api.vk.com/method/database.getCountries?code=ru, de&need_all=1&access_token=";
-
-            const string json =
+			const string url = "https://api.vk.com/method/database.getCountries?code=RU,DE&v=" + VkApi.VkApiVersion + "&access_token=";
+			const string json =
                 @"{
                     'response': [
                       {
@@ -389,9 +370,13 @@ namespace VkNet.Tests.Categories
                   }";
 
             var db = GetMockedDatabaseCategory(url, json);
-            ReadOnlyCollection<Country> countries = db.GetCountries(codes: "ru, de");
+            var countries = db.GetCountries(codes: new List<Iso3166>
+            {
+	            Iso3166.RU,
+				Iso3166.DE
+            });
 
-            Assert.That(countries.Count, Is.EqualTo(2));
+			Assert.That(countries.Count, Is.EqualTo(2));
 
             Assert.That(countries[0].Id, Is.EqualTo(1));
             Assert.That(countries[0].Title, Is.EqualTo("Россия"));
@@ -421,13 +406,12 @@ namespace VkNet.Tests.Categories
                     ]
                   }";
 
-             const string url = "https://api.vk.com/method/database.getCountries?offset=5&count=3&need_all=1&access_token=";
+			const string url = "https://api.vk.com/method/database.getCountries?offset=5&count=3&need_all=1&v=" + VkApi.VkApiVersion + "&access_token=";
+			var db = GetMockedDatabaseCategory(url, json);
 
-             var db = GetMockedDatabaseCategory(url, json);
+             var countries = db.GetCountries(true, null, 3, 5);
 
-             ReadOnlyCollection<Country> countries = db.GetCountries(true, "", 3, 5);
-
-             Assert.That(countries.Count, Is.EqualTo(3));
+			Assert.That(countries.Count, Is.EqualTo(3));
 
              Assert.That(countries[0].Id, Is.EqualTo(23));
              Assert.That(countries[0].Title, Is.EqualTo("Американское Самоа"));
@@ -442,15 +426,15 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetCountriesById_EmptyList()
         {
-            const string url = "https://api.vk.com/method/database.getCountriesById?access_token=";
+            const string url = "https://api.vk.com/method/database.getCountriesById?v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': []
                   }";
 
-            DatabaseCategory db = GetMockedDatabaseCategory(url, json);
+            var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<Country> countries = db.GetCountriesById();
+			var countries = db.GetCountriesById();
 
             Assert.That(countries, Is.Not.Null);
             Assert.That(countries.Count, Is.EqualTo(0));
@@ -459,7 +443,7 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetCountriesById_1And65_RussiaAndGermany()
         {
-            const string url = "https://api.vk.com/method/database.getCountriesById?country_ids=1,65&access_token=";
+            const string url = "https://api.vk.com/method/database.getCountriesById?country_ids=1,65&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -474,9 +458,9 @@ namespace VkNet.Tests.Categories
                     ]
                   }";
 
-            DatabaseCategory db = GetMockedDatabaseCategory(url, json);
+            var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<Country> countries = db.GetCountriesById(1, 65);
+			var countries = db.GetCountriesById(1, 65);
 
             Assert.That(countries.Count, Is.EqualTo(2));
 
@@ -490,7 +474,7 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetSchools_BadQuery_EmptyList()
         {
-            const string url = "https://api.vk.com/method/database.getSchools?q=SchoolDoesNotExist&country_id=1&city_id=10&access_token=";
+            const string url = "https://api.vk.com/method/database.getSchools?q=SchoolDoesNotExist&city_id=10&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -500,58 +484,42 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<School> schools = db.GetSchools(1, 10, "SchoolDoesNotExist");
+            var schools = db.GetSchools(10, "SchoolDoesNotExist");
 
-            Assert.That(schools.Count, Is.EqualTo(0));
+			Assert.That(schools.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void GetSchools_LiceumsInVolgograd_ListOfLiceums()
         {
-            const string url = "https://api.vk.com/method/database.getSchools?country_id=1&city_id=10&count=3&access_token=";
+            const string url = "https://api.vk.com/method/database.getSchools?city_id=10&count=3&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
-                @"{
-                    'response': [
-                      342,
-                      {
-                        'id': 53649,
-                        'title': 'шк. 1'
-                      },
-                      {
-                        'id': 295408,
-                        'title': 'гимн. 1'
-                      },
-                      {
-                        'id': 55159,
-                        'title': 'лиц. 1'
-                      }
-                    ]
-                  }";
+                @"{'response':{'count':343,'items':[{'id':51946,'title':'Астраханское речное училище (ВФ АРУ)'},{'id':207063,'title':'Библейская школа «Весть»'},{'id':224706,'title':'Библейский колледж «Новая жизнь»'}]}}";
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<School> schools = db.GetSchools(1, 10, count: 3);
+            var schools = db.GetSchools(10, count: 3);
 
-            Assert.That(schools.Count, Is.EqualTo(3));
+			Assert.That(schools.Count, Is.EqualTo(3));
 
-            Assert.That(schools[0].Id, Is.EqualTo(53649));
-            Assert.That(schools[0].Name, Is.EqualTo("шк. 1"));
+            Assert.That(schools[0].Id, Is.EqualTo(51946));
+            Assert.That(schools[0].Name, Is.EqualTo("Астраханское речное училище (ВФ АРУ)"));
 
-            Assert.That(schools[1].Id, Is.EqualTo(295408));
-            Assert.That(schools[1].Name, Is.EqualTo("гимн. 1"));
+            Assert.That(schools[1].Id, Is.EqualTo(207063));
+            Assert.That(schools[1].Name, Is.EqualTo("Библейская школа «Весть»"));
 
-            Assert.That(schools[2].Id, Is.EqualTo(55159));
-            Assert.That(schools[2].Name, Is.EqualTo("лиц. 1"));
+            Assert.That(schools[2].Id, Is.EqualTo(224706));
+            Assert.That(schools[2].Name, Is.EqualTo("Библейский колледж «Новая жизнь»"));
         }
 
         [Test]
         [Ignore("undone")]
         public void GetFaculties_SuchUniversityDoesNotExist()
         {
-//            const string url = "https://api.vk.com/method/database.getFaculties?university_id=999999&access_token=";
-//            var db = _db;
-//
-//            List<Faculty> faculties = db.GetFaculties(999999);
+            //            const string url = "https://api.vk.com/method/database.getFaculties?university_id=999999&v=" + VkApi.VkApiVersion + "&access_token=";
+            //            var db = _db;
+            //
+            //            List<Faculty> faculties = db.GetFaculties(999999);
 
             Assert.Fail("undone");
         }
@@ -559,7 +527,7 @@ namespace VkNet.Tests.Categories
         [Test]
         public void GetFaculties_ListVstuFaculties()
         {
-            const string url = "https://api.vk.com/method/database.getFaculties?university_id=431&offset=2&count=3&access_token=";
+            const string url = "https://api.vk.com/method/database.getFaculties?university_id=431&offset=2&count=3&v=" + VkApi.VkApiVersion + "&access_token=";
             const string json =
                 @"{
                     'response': [
@@ -581,9 +549,9 @@ namespace VkNet.Tests.Categories
 
             var db = GetMockedDatabaseCategory(url, json);
 
-            ReadOnlyCollection<Faculty> faculties = db.GetFaculties(431, 3, 2);
+            var faculties = db.GetFaculties(431, 3, 2);
 
-            Assert.That(faculties.Count, Is.EqualTo(3));
+			Assert.That(faculties.Count, Is.EqualTo(3));
 
             Assert.That(faculties[0].Id, Is.EqualTo(3160));
             Assert.That(faculties[0].Title, Is.EqualTo("Автоматизированных систем и технологической информатики (бывш. Машиностроительный)"));
@@ -594,6 +562,5 @@ namespace VkNet.Tests.Categories
             Assert.That(faculties[2].Id, Is.EqualTo(3162));
             Assert.That(faculties[2].Title, Is.EqualTo("Электроники и вычислительной техники"));
         }
-
     }
 }

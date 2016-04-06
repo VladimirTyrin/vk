@@ -1,7 +1,6 @@
-﻿using VkNet.Enums.SafetyEnums;
-using VkNet.Utils;
+﻿using VkNet.Utils;
 
-namespace VkNet.Enums
+namespace VkNet.Enums.SafetyEnums
 {
 	/// <summary>
 	/// Способ сортировки приложений
@@ -13,18 +12,22 @@ namespace VkNet.Enums
 		/// </summary>
 		[DefaultValue]
 		public static readonly AppSort PopularToday = RegisterPossibleValue("popular_today");
+
 		/// <summary>
 		/// По посещаемости
 		/// </summary>
 		public static readonly AppSort Visitors = RegisterPossibleValue("visitors");
+
 		/// <summary>
 		/// По дате создания приложения
 		/// </summary>
 		public static readonly AppSort CreateDate = RegisterPossibleValue("create_date");
+
 		/// <summary>
 		/// По скорости роста
 		/// </summary>
 		public static readonly AppSort GrowthRate = RegisterPossibleValue("growth_rate");
+
 		/// <summary>
 		/// Популярные за неделю.
 		/// </summary>
